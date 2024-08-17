@@ -1,19 +1,15 @@
-import { ProductsDB } from "./products.model"
-import { type ProductDBType } from "./types/product.type"
+import { ProductsDB } from "./products.model";
+import { type ProductDBType } from "./types/product.type";
 
-
-
-
-const productsDB = ProductsDB.instance()
+const productsDB = ProductsDB.instance();
 
 export function getProductsHandler() {
-
-  return productsDB.getProducts()
-
-
+  return productsDB.getProducts();
 }
-
+export function getProductHandler(id: number) {
+  return productsDB.getProduct(id);
+}
 export function createProductHandler(product: ProductDBType) {
-  console.log('handler', product)
-  return productsDB.createProduct(product)
+  console.log("handler", product);
+  return productsDB.createProduct(product);
 }
