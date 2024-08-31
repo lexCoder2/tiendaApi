@@ -1,6 +1,8 @@
 // Import the framework and instantiate it
 import Fastify from "fastify";
-import multipart from '@fastify/multipart'
+import multipart from "@fastify/multipart";
+import { networkInterfaces } from "node:os";
+import querystring from "node:querystring";
 import {
   createProductHandler,
   getProductHandler,
@@ -8,16 +10,17 @@ import {
 } from "./products.controller";
 import { type ProductDBType } from "./types/product.type";
 import fastifyCors from "@fastify/cors";
-import { promisify } from 'util';
-import { pipeline } from 'stream'
-import { uploadImage } from './uploadImage';
+import { promisify } from "util";
+import { pipeline } from "stream";
+import { uploadImage } from "./uploadImage";
+import { ipAddress } from "./utils";
 
 const fastify = Fastify({
   logger: true,
+  querystringParser: (str) => querystring.parse(str.toLowerCase()),
 });
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-fastify.register(multipart)
-
+fastify.register(multipart);
 
 fastify.register(fastifyCors, {
   origin: (origin, cb) => {
@@ -33,10 +36,19 @@ fastify.register(fastifyCors, {
     cb(new Error("Not allowed"), false);
   },
 });
-fastify.get("/products", async function handler(request, reply) {
-  const products = await getProductsHandler();
-  reply.send(products);
-});
+
+export interface queryParams {
+  search: string;
+}
+
+fastify.get<{ Querystring: queryParams }>(
+  "/products",
+  async function handler(request, reply) {
+    const queryParams = request.query;
+    const products = await getProductsHandler(queryParams);
+    reply.send(products);
+  },
+);
 
 fastify.get<{ Params: { id: number } }>(
   "/products/:id",
@@ -55,21 +67,22 @@ fastify.post(
   },
 );
 
-fastify.post('/image', function (req, reply) {
-  console.log('..uploadding')
-  const pump = promisify(pipeline)
-  req.file({ limits: { fileSize: 8104857 } }).then(file => {
-    uploadImage(file, pump).then(response => {
-      reply.send({ response })
-    })
-  })
-})
-
+fastify.post("/image", function (req, reply) {
+  console.log("..uploadding");
+  const pump = promisify(pipeline);
+  req.file({ limits: { fileSize: 8104857 } }).then((file) => {
+    uploadImage(file, pump).then((response) => {
+      reply.send({ response });
+    });
+  });
+});
 
 try {
+  const ip = ipAddress();
+  console.log(ip);
   fastify.listen({
     port: 3000,
-    host: '192.168.6.178'
+    host: "172.31.60.115",
   });
 } catch (err) {
   fastify.log.error(err);

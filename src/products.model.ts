@@ -1,5 +1,6 @@
 import { Database as DB } from "sqlite3";
 import { type ProductDBType } from "./types/product.type";
+import { type queryParams } from ".";
 
 export class ProductsDB {
   static instanceProducts: ProductsDB;
@@ -22,10 +23,18 @@ export class ProductsDB {
 
   addProduct() {}
 
-  getProducts() {
+  getProducts(params: queryParams) {
     return new Promise((resolve, reject) => {
-      this.db.all("SELECT * FROM Productos", (err, rows) => {
+      let query = "SELECT * FROM Productos";
+      const sqlParams: string[] = [];
+      if (params.search) {
+        sqlParams.push(`%${params.search}%`);
+        query += " WHERE description LIKE ?";
+      }
+      console.log(query, sqlParams);
+      this.db.all(query, sqlParams, (err, rows) => {
         if (err) {
+          console.log(err);
           reject(err);
         } else {
           resolve(rows);
@@ -76,12 +85,14 @@ export class ProductsDB {
     }).then((id) => this.getProduct(id));
   }
 }
-function handlePost(resolve: { (value: unknown): void; (arg0: any): void; }, reject: { (reason?: any): void; (arg0: any): void; }) {
-  return function(err : any ) {
-    if(err){
-      reject(err)
+function handlePost(
+  resolve: { (value: unknown): void; (arg0: any): void },
+  reject: { (reason?: any): void; (arg0: any): void },
+) {
+  return function (err: any) {
+    if (err) {
+      reject(err);
     }
-    resolve(this.lastID)
-  } 
-
+    resolve(this.lastID);
+  };
 }
